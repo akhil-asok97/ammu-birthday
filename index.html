@@ -2,17 +2,31 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Happy Birthday Ammu!</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
+        :root {
+            --primary: #ff4757;
+            --secondary: #ff6b81;
+            --bg-grad-1: #ff9a9e;
+            --bg-grad-2: #fecfef;
+        }
+
         body {
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
-            overflow: hidden; /* Keep it app-like */
+            background: linear-gradient(135deg, var(--bg-grad-1) 0%, var(--bg-grad-2) 100%);
+            overflow: hidden;
             touch-action: manipulation;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         
         .title-font {
@@ -22,272 +36,541 @@
         .stage {
             display: none;
             opacity: 0;
-            transition: opacity 0.5s ease-in-out;
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-out;
+            transform: translateY(20px);
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            scrollbar-width: none; /* Firefox */
+        }
+        .stage::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
         }
 
         .stage.active {
             display: flex;
             opacity: 1;
+            transform: translateY(0);
         }
 
-        /* Animations */
         @keyframes float {
-            0% { transform: translateY(0) scale(1); }
-            50% { transform: translateY(-20px) scale(1.1); }
-            100% { transform: translateY(0) scale(1); }
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-10px) scale(1.05); }
         }
-
-        .animate-float {
-            animation: float 3s ease-in-out infinite;
-        }
+        .animate-float { animation: float 3s ease-in-out infinite; }
 
         @keyframes pulse-glow {
             0% { box-shadow: 0 0 0 0 rgba(255, 105, 180, 0.7); }
             70% { box-shadow: 0 0 20px 15px rgba(255, 105, 180, 0); }
             100% { box-shadow: 0 0 0 0 rgba(255, 105, 180, 0); }
         }
+        .btn-pulse { animation: pulse-glow 2s infinite; }
 
-        .btn-pulse {
-            animation: pulse-glow 2s infinite;
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
         }
+        .animate-shake { animation: shake 0.4s ease-in-out; }
 
-        /* Heart Catch Game */
-        #game-area {
+        #catch-game-area {
             position: relative;
             width: 100%;
             height: 300px;
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.3);
             border-radius: 20px;
             overflow: hidden;
-            border: 2px dashed #ff4757;
+            border: 2px dashed var(--primary);
+            touch-action: none; /* Prevent scrolling while playing */
         }
 
-        .floating-heart {
+        #basket {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 3rem;
+            line-height: 1;
+            z-index: 10;
+            pointer-events: none;
+            transition: left 0.05s linear;
+        }
+
+        .falling-item {
             position: absolute;
             font-size: 2rem;
-            cursor: pointer;
             user-select: none;
-            transition: transform 0.2s;
-            animation: floatUp 4s linear forwards;
-        }
-        
-        .floating-heart:active {
-            transform: scale(1.5);
+            z-index: 5;
         }
 
-        @keyframes floatUp {
-            0% { transform: translateY(320px) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(-50px) rotate(360deg); opacity: 0; }
+        .gift-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
         }
 
-        /* Confetti */
+        .gift-card {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 15px;
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .gift-card:active { transform: scale(0.9); }
+        .gift-card.revealed { background: rgba(255, 255, 255, 0.9); cursor: default; }
+
+        .meter-container {
+            width: 100%;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        #meter-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ff758c 0%, #ff7eb3 100%);
+            transition: width 0.1s linear;
+        }
+
+        .mash-btn {
+            background: linear-gradient(135deg, #ff4757, #ff6b81);
+            user-select: none;
+        }
+        .mash-btn:active { transform: scale(0.95); }
+
         .confetti {
             position: absolute;
             width: 10px;
             height: 10px;
-            background-color: #f00;
-            animation: fall 3s linear infinite;
+            pointer-events: none;
+            z-index: 100;
+            animation: fall linear forwards;
         }
 
         @keyframes fall {
-            to { transform: translateY(100vh) rotate(720deg); }
+            0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
         }
     </style>
 </head>
-<body class="h-screen w-screen text-gray-800 flex flex-col items-center justify-center p-4">
+<body>
 
-    <!-- Stage 1: Welcome -->
-    <div id="stage1" class="stage active flex-col items-center justify-center text-center w-full max-w-md bg-white/60 backdrop-blur-md p-8 rounded-3xl shadow-2xl">
-        <h1 class="title-font text-5xl text-pink-600 mb-4 animate-float">Happy Birthday, Ammu! 💖</h1>
-        <p class="text-lg mb-8 font-medium text-gray-700">I made a little birthday quest just for you. Are you ready to play?</p>
-        <button onclick="nextStage(2)" class="btn-pulse bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xl font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:scale-105 active:scale-95">
-            Let's Go! ✨
+    <div id="stage0" class="stage active flex-col items-center justify-center text-center bg-white/70 backdrop-blur-md p-8 rounded-3xl shadow-2xl border border-white/50">
+        <div class="text-6xl mb-4 animate-float">💌</div>
+        <h1 class="title-font text-5xl text-rose-600 mb-4 drop-shadow-sm">Happy Birthday, Ammu!</h1>
+        <p class="text-lg mb-8 font-medium text-gray-700 leading-relaxed">I created a special little quest just for you. 5 levels to prove my love. Are you ready?</p>
+        <button onclick="nextStage(1)" class="btn-pulse bg-gradient-to-r from-rose-400 to-pink-500 text-white text-xl font-bold py-3 px-10 rounded-full shadow-lg transform transition hover:scale-105 active:scale-95">
+            Start the Quest ✨
         </button>
     </div>
 
-    <!-- Stage 2: Mini Game 1 - Heart Catch -->
-    <div id="stage2" class="stage flex-col items-center justify-center text-center w-full max-w-md bg-white/60 backdrop-blur-md p-6 rounded-3xl shadow-2xl">
-        <h2 class="title-font text-3xl text-pink-600 mb-2">Collect My Love!</h2>
-        <p class="text-sm mb-4 font-medium text-gray-700">Catch 10 hearts to unlock the next level.</p>
+    <div id="stage1" class="stage flex-col items-center justify-center text-center bg-white/70 backdrop-blur-md p-6 rounded-3xl shadow-2xl">
+        <h2 class="title-font text-3xl text-rose-600 mb-2">Level 1: Catch My Love</h2>
+        <p class="text-sm mb-4 font-medium text-gray-700">Slide the basket to catch 10 hearts. Don't let them fall!</p>
         
         <div class="flex justify-between w-full px-4 mb-2">
-            <span class="font-bold text-pink-600 text-lg">Hearts: <span id="score">0</span>/10</span>
+            <span class="font-bold text-rose-600 text-lg">Score: <span id="l1-score">0</span>/10</span>
         </div>
 
-        <div id="game-area" class="mb-6 shadow-inner">
-            <!-- Hearts will be injected here via JS -->
+        <div id="catch-game-area" class="mb-6 shadow-inner">
+            <div id="basket">🧺</div>
         </div>
 
-        <button id="btn-next-stage2" onclick="nextStage(3)" class="hidden bg-gradient-to-r from-pink-500 to-rose-500 text-white text-lg font-bold py-2 px-6 rounded-full shadow-lg transform transition hover:scale-105 active:scale-95">
-            You did it! Next ➡️
+        <button id="btn-next-stage1" onclick="nextStage(2)" class="hidden w-full bg-gradient-to-r from-rose-400 to-pink-500 text-white text-lg font-bold py-3 px-6 rounded-full shadow-lg transform transition hover:scale-105 active:scale-95">
+            Level Complete! Next ➡️
         </button>
     </div>
 
-    <!-- Stage 3: Sweet Trivia -->
-    <div id="stage3" class="stage flex-col items-center justify-center text-center w-full max-w-md bg-white/60 backdrop-blur-md p-8 rounded-3xl shadow-2xl">
-        <h2 class="title-font text-4xl text-pink-600 mb-6">Security Check 🕵️‍♀️</h2>
-        <p class="text-lg mb-6 font-medium text-gray-700">To unlock your final surprise, you must answer this correctly:</p>
+    <div id="stage2" class="stage flex-col items-center justify-center text-center bg-white/70 backdrop-blur-md p-8 rounded-3xl shadow-2xl">
+        <h2 class="title-font text-3xl text-rose-600 mb-4">Level 2: A Romantic Riddle</h2>
+        <p class="text-md mb-6 font-medium text-gray-700">Answer this correctly to unlock the next level.</p>
         
-        <div class="w-full bg-white/80 p-6 rounded-2xl shadow-md mb-6">
-            <p class="text-xl font-bold text-rose-500 mb-4">Who loves you the most in the entire universe?</p>
+        <div class="w-full bg-white/80 p-6 rounded-2xl shadow-sm mb-6 border border-pink-100">
+            <p class="text-xl font-bold text-rose-600 mb-6 font-serif italic">"I belong to you, and without you, I am incomplete. What holds my heart forever?"</p>
             
             <div class="flex flex-col gap-3">
-                <button onclick="checkAnswer(false)" class="w-full bg-pink-100 hover:bg-pink-200 text-pink-800 font-semibold py-3 px-4 rounded-xl transition">
-                    Pizza
-                </button>
-                <button onclick="checkAnswer(true)" class="w-full bg-pink-100 hover:bg-pink-200 text-pink-800 font-semibold py-3 px-4 rounded-xl transition">
-                    Akhil
-                </button>
-                <button onclick="checkAnswer(true)" class="w-full bg-pink-100 hover:bg-pink-200 text-pink-800 font-semibold py-3 px-4 rounded-xl transition">
-                    Obviously Akhil ❤️
-                </button>
+                <button onclick="checkRiddle(false, this)" class="riddle-btn w-full bg-pink-50 hover:bg-pink-100 text-pink-800 font-semibold py-3 px-4 rounded-xl transition border border-pink-200">A heavy safe 🔒</button>
+                <button onclick="checkRiddle(false, this)" class="riddle-btn w-full bg-pink-50 hover:bg-pink-100 text-pink-800 font-semibold py-3 px-4 rounded-xl transition border border-pink-200">Gravity 🌍</button>
+                <button onclick="checkRiddle(true, this)" class="riddle-btn w-full bg-pink-50 hover:bg-pink-100 text-pink-800 font-semibold py-3 px-4 rounded-xl transition border border-pink-200">My beautiful Ammu ❤️</button>
+                <button onclick="checkRiddle(false, this)" class="riddle-btn w-full bg-pink-50 hover:bg-pink-100 text-pink-800 font-semibold py-3 px-4 rounded-xl transition border border-pink-200">Biryani 🍗</button>
             </div>
         </div>
         
-        <p id="trivia-msg" class="text-red-500 font-bold hidden mb-4">Try again, beautiful! 😉</p>
+        <p id="riddle-msg" class="text-red-500 font-bold opacity-0 transition-opacity">Try again, love! 😉</p>
+
+        <button id="btn-next-stage2" onclick="nextStage(3)" class="hidden w-full mt-4 bg-gradient-to-r from-rose-400 to-pink-500 text-white text-lg font-bold py-3 px-6 rounded-full shadow-lg transform transition hover:scale-105 active:scale-95">
+            You knew it! Next ➡️
+        </button>
     </div>
 
-    <!-- Stage 4: Finale -->
-    <div id="stage4" class="stage flex-col items-center justify-center text-center w-full max-w-lg bg-white/80 backdrop-blur-md p-8 rounded-3xl shadow-2xl relative overflow-hidden border-4 border-pink-300">
-        <div class="absolute -top-10 -left-10 text-9xl opacity-20">🎈</div>
-        <div class="absolute -bottom-10 -right-10 text-9xl opacity-20">🎁</div>
+    <div id="stage3" class="stage flex-col items-center justify-center text-center bg-white/70 backdrop-blur-md p-6 rounded-3xl shadow-2xl">
+        <h2 class="title-font text-3xl text-rose-600 mb-2">Level 3: Hidden Surprises</h2>
+        <p class="text-sm mb-4 font-medium text-gray-700">Find the 3 hidden birthday presents! Tap the cards.</p>
         
-        <h1 class="title-font text-5xl text-rose-600 mb-6 animate-float z-10">Happy Birthday, Ammu!</h1>
+        <div class="flex justify-between w-full px-4 mb-4">
+            <span class="font-bold text-rose-600 text-lg">Found: <span id="l3-score">0</span>/3</span>
+        </div>
+
+        <div id="gift-grid" class="gift-grid w-full">
+            <!-- Grid items injected via JS -->
+        </div>
+
+        <button id="btn-next-stage3" onclick="nextStage(4)" class="hidden w-full bg-gradient-to-r from-rose-400 to-pink-500 text-white text-lg font-bold py-3 px-6 rounded-full shadow-lg transform transition hover:scale-105 active:scale-95">
+            All found! Next ➡️
+        </button>
+    </div>
+
+    <div id="stage4" class="stage flex-col items-center justify-center text-center bg-white/70 backdrop-blur-md p-8 rounded-3xl shadow-2xl">
+        <h2 class="title-font text-3xl text-rose-600 mb-4">Level 4: The Love Meter</h2>
+        <p class="text-md mb-6 font-medium text-gray-700">Show me how much you love me! Tap the button rapidly to fill the meter to 100%.</p>
         
-        <div class="bg-white/90 p-6 rounded-2xl shadow-inner mb-6 z-10 relative">
+        <div class="w-full mb-2 flex justify-between">
+            <span class="text-xs font-bold text-gray-500">Empty</span>
+            <span class="text-xs font-bold text-rose-600" id="meter-percent">0%</span>
+            <span class="text-xs font-bold text-pink-500">Full</span>
+        </div>
+        
+        <div class="meter-container mb-8">
+            <div id="meter-fill"></div>
+        </div>
+
+        <button id="mash-btn" onclick="mashButton()" class="mash-btn w-40 h-40 rounded-full text-white text-2xl font-bold shadow-xl border-4 border-white/50 flex items-center justify-center mx-auto mb-4 animate-float">
+            TAP ME!<br>💖
+        </button>
+
+        <button id="btn-next-stage4" onclick="nextStage(5)" class="hidden w-full bg-gradient-to-r from-rose-400 to-pink-500 text-white text-lg font-bold py-3 px-6 rounded-full shadow-lg transform transition hover:scale-105 active:scale-95">
+            Unlock the Finale 🎁
+        </button>
+    </div>
+
+    <div id="stage5" class="stage flex-col items-center justify-center text-center w-full bg-white/85 backdrop-blur-md p-8 rounded-3xl shadow-2xl relative border-4 border-pink-300">
+        <div class="absolute -top-10 -left-10 text-8xl opacity-20 transform -rotate-12">🎈</div>
+        <div class="absolute -bottom-10 -right-10 text-8xl opacity-20 transform rotate-12">🍰</div>
+        
+        <h1 class="title-font text-5xl text-rose-600 mb-6 z-10 drop-shadow-sm">You did it, Ammu!</h1>
+        
+        <div class="bg-white/90 p-6 rounded-2xl shadow-inner mb-6 z-10 relative border border-pink-100">
             <p class="text-lg text-gray-800 leading-relaxed mb-4 font-medium">
                 My dearest Ammu,<br><br>
-                Today is all about you! I hope this silly little game brought a smile to your face. You bring so much joy, love, and brightness into my life every single day. 
+                Happy Birthday! 🎉 Thank you for playing along with my silly little game. Every level was just a small reminder of how much you mean to me.
             </p>
-            <p class="text-lg text-gray-800 leading-relaxed font-bold text-pink-600">
-                May your birthday be as beautiful, sweet, and incredible as you are. I love you endlessly!
+            <p class="text-lg text-gray-800 leading-relaxed mb-4 font-medium">
+                You hold my heart completely. Your smile is my favorite reward, and loving you is the easiest thing I've ever done.
+            </p>
+            <p class="text-xl text-pink-600 leading-relaxed font-bold">
+                May your day be as beautiful, sweet, and absolutely incredible as you are.
             </p>
         </div>
         
-        <p class="text-2xl font-bold text-rose-500 title-font z-10">Yours forever,<br>Akhil ❤️</p>
+        <div class="z-10 bg-pink-100 py-3 px-6 rounded-full border border-pink-200 shadow-sm animate-float">
+            <p class="text-2xl font-bold text-rose-600 title-font">Forever yours,<br>Akhil ❤️</p>
+        </div>
     </div>
 
     <script>
-        // --- Navigation Logic ---
-        function nextStage(stageNum) {
-            // Hide all stages
-            document.querySelectorAll('.stage').forEach(el => {
-                el.classList.remove('active');
-                setTimeout(() => { el.style.display = 'none'; }, 500);
-            });
-
-            // Show target stage
-            const target = document.getElementById('stage' + stageNum);
-            setTimeout(() => {
-                target.style.display = 'flex';
-                // Trigger reflow
-                void target.offsetWidth; 
-                target.classList.add('active');
-            }, 500);
-
-            // Trigger specific stage logic
-            if (stageNum === 2) startHeartGame();
-            if (stageNum === 4) triggerConfetti();
+        // Global Stage Navigation
+        function nextStage(targetNum) {
+            const current = document.querySelector('.stage.active');
+            if(current) {
+                current.classList.remove('active');
+                setTimeout(() => {
+                    current.style.display = 'none';
+                    showTarget(targetNum);
+                }, 500); // match css transition
+            } else {
+                showTarget(targetNum);
+            }
         }
 
-        // --- Stage 2: Heart Game Logic ---
-        let score = 0;
-        let gameInterval;
-        const gameArea = document.getElementById('game-area');
-        const scoreDisplay = document.getElementById('score');
-        const nextBtn2 = document.getElementById('btn-next-stage2');
-        const emojis = ['💖', '❤️', '💕', '🥰', '😘'];
-
-        function startHeartGame() {
-            score = 0;
-            scoreDisplay.innerText = score;
-            nextBtn2.classList.add('hidden');
-            gameArea.innerHTML = '';
+        function showTarget(num) {
+            const target = document.getElementById('stage' + num);
+            if(!target) return;
             
-            gameInterval = setInterval(spawnHeart, 600);
+            target.style.display = 'flex';
+            // force reflow
+            void target.offsetWidth;
+            target.classList.add('active');
+
+            // Initialize level specific logic
+            if(num === 1) initLevel1();
+            if(num === 3) initLevel3();
+            if(num === 4) initLevel4();
+            if(num === 5) initFinale();
+        }
+
+        let l1GameLoop, l1SpawnLoop;
+        let l1Score = 0;
+        let l1IsActive = false;
+        const basket = document.getElementById('basket');
+        const gameArea = document.getElementById('catch-game-area');
+        const l1ScoreDisplay = document.getElementById('l1-score');
+        const l1NextBtn = document.getElementById('btn-next-stage1');
+        
+        let basketX = 150; // initial center approx
+
+        function initLevel1() {
+            l1Score = 0;
+            l1ScoreDisplay.innerText = '0';
+            l1IsActive = true;
+            l1NextBtn.classList.add('hidden');
+            
+            // clear old hearts
+            const oldHearts = document.querySelectorAll('.falling-item');
+            oldHearts.forEach(h => h.remove());
+
+            // Setup input listeners
+            gameArea.addEventListener('touchmove', handleMove, {passive: false});
+            gameArea.addEventListener('mousemove', handleMove);
+
+            // Start game loops
+            l1SpawnLoop = setInterval(spawnHeart, 800);
+            requestAnimationFrame(l1Update);
+        }
+
+        function handleMove(e) {
+            if(!l1IsActive) return;
+            e.preventDefault(); // stop scroll on touch
+            
+            let clientX;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+            } else {
+                clientX = e.clientX;
+            }
+
+            const rect = gameArea.getBoundingClientRect();
+            // constrain basket within game area
+            let x = clientX - rect.left;
+            x = Math.max(20, Math.min(x, rect.width - 20)); 
+            basketX = x;
+            basket.style.left = basketX + 'px';
         }
 
         function spawnHeart() {
-            if (score >= 10) {
-                clearInterval(gameInterval);
-                return;
-            }
-
+            if(!l1IsActive) return;
             const heart = document.createElement('div');
-            heart.classList.add('floating-heart');
-            heart.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+            heart.className = 'falling-item';
+            heart.innerText = ['❤️', '💖', '💕', '🥰'][Math.floor(Math.random() * 4)];
             
-            // Random horizontal position
-            const leftPos = Math.random() * (gameArea.offsetWidth - 40);
-            heart.style.left = leftPos + 'px';
-
-            // Click / Tap event
-            const catchHeart = (e) => {
-                e.preventDefault(); // prevent double firing on touch
-                if(heart.style.opacity === '0') return; // already caught
-                
-                heart.style.opacity = '0';
-                heart.style.transform = 'scale(2)';
-                score++;
-                scoreDisplay.innerText = score;
-                
-                // Pop animation effect
-                const pop = document.createElement('div');
-                pop.innerText = '✨';
-                pop.style.position = 'absolute';
-                pop.style.left = heart.style.left;
-                pop.style.top = heart.getBoundingClientRect().top - gameArea.getBoundingClientRect().top + 'px';
-                pop.style.transition = 'all 0.5s';
-                gameArea.appendChild(pop);
-                setTimeout(() => pop.remove(), 500);
-
-                if (score >= 10) {
-                    clearInterval(gameInterval);
-                    setTimeout(() => {
-                        nextBtn2.classList.remove('hidden');
-                        nextBtn2.classList.add('animate-float');
-                    }, 500);
-                }
-            };
-
-            heart.addEventListener('mousedown', catchHeart);
-            heart.addEventListener('touchstart', catchHeart);
-
+            const startX = Math.random() * (gameArea.offsetWidth - 30);
+            heart.style.left = startX + 'px';
+            heart.style.top = '-40px'; // start above
+            
+            // Attach custom data for update loop
+            heart.dataset.y = -40;
+            heart.dataset.speed = 2 + Math.random() * 2;
+            
             gameArea.appendChild(heart);
-
-            // Cleanup DOM
-            setTimeout(() => {
-                if (heart.parentNode) heart.remove();
-            }, 4000);
         }
 
-        // --- Stage 3: Trivia Logic ---
-        function checkAnswer(isCorrect) {
-            const msg = document.getElementById('trivia-msg');
+        function l1Update() {
+            if(!l1IsActive) return;
+
+            const items = document.querySelectorAll('.falling-item');
+            const basketRect = basket.getBoundingClientRect();
+            const areaRect = gameArea.getBoundingClientRect();
+
+            items.forEach(item => {
+                let y = parseFloat(item.dataset.y);
+                y += parseFloat(item.dataset.speed);
+                item.dataset.y = y;
+                item.style.top = y + 'px';
+
+                // Check bounds (missed)
+                if (y > areaRect.height) {
+                    item.remove();
+                } else {
+                    // Check collision
+                    const itemRect = item.getBoundingClientRect();
+                    // Basic AABB collision
+                    if (
+                        itemRect.bottom >= basketRect.top + 10 &&
+                        itemRect.top <= basketRect.bottom &&
+                        itemRect.right >= basketRect.left &&
+                        itemRect.left <= basketRect.right
+                    ) {
+                        // Caught!
+                        item.remove();
+                        l1Score++;
+                        l1ScoreDisplay.innerText = l1Score;
+                        basket.style.transform = 'translateX(-50%) scale(1.2)';
+                        setTimeout(() => basket.style.transform = 'translateX(-50%) scale(1)', 100);
+
+                        if(l1Score >= 10) {
+                            l1Win();
+                        }
+                    }
+                }
+            });
+
+            if(l1IsActive) requestAnimationFrame(l1Update);
+        }
+
+        function l1Win() {
+            l1IsActive = false;
+            clearInterval(l1SpawnLoop);
+            l1NextBtn.classList.remove('hidden');
+            l1NextBtn.classList.add('animate-float');
+        }
+
+        function checkRiddle(isCorrect, btn) {
+            const msg = document.getElementById('riddle-msg');
             if (isCorrect) {
-                msg.classList.add('hidden');
-                nextStage(4);
+                msg.style.opacity = '0';
+                btn.classList.remove('bg-pink-50', 'text-pink-800');
+                btn.classList.add('bg-green-500', 'text-white', 'border-green-600');
+                
+                // Disable all buttons
+                document.querySelectorAll('.riddle-btn').forEach(b => b.disabled = true);
+                
+                const nextBtn = document.getElementById('btn-next-stage2');
+                nextBtn.classList.remove('hidden');
+                setTimeout(() => nextBtn.classList.add('animate-float'), 100);
             } else {
-                msg.classList.remove('hidden');
-                msg.classList.add('animate-bounce');
-                setTimeout(() => msg.classList.remove('animate-bounce'), 1000);
+                msg.style.opacity = '1';
+                btn.classList.add('animate-shake', 'bg-red-100');
+                setTimeout(() => {
+                    btn.classList.remove('animate-shake', 'bg-red-100');
+                    msg.style.opacity = '0';
+                }, 1000);
             }
         }
 
-        // --- Stage 4: Confetti Finale ---
-        function triggerConfetti() {
-            const colors = ['#ff4757', '#ff6b81', '#ff7f50', '#ffffff', '#eccc68'];
-            for (let i = 0; i < 100; i++) {
+        let l3Found = 0;
+        
+        function initLevel3() {
+            l3Found = 0;
+            document.getElementById('l3-score').innerText = '0';
+            document.getElementById('btn-next-stage3').classList.add('hidden');
+            
+            const grid = document.getElementById('gift-grid');
+            grid.innerHTML = '';
+            
+            // 9 items, 3 are real gifts
+            const items = ['🎁', '🎁', '🎁', '🎈', '🍩', '🧸', '🌸', '👗', '🎀'];
+            // Shuffle
+            items.sort(() => Math.random() - 0.5);
+
+            items.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = 'gift-card';
+                card.innerText = '❓';
+                card.onclick = () => revealCard(card, item);
+                grid.appendChild(card);
+            });
+        }
+
+        function revealCard(card, item) {
+            if(card.classList.contains('revealed')) return;
+            
+            card.classList.add('revealed');
+            card.innerText = item;
+            card.style.transform = 'scale(1.1)';
+            setTimeout(() => card.style.transform = 'scale(1)', 200);
+
+            if(item === '🎁') {
+                card.style.background = '#dcfce7'; // green-100
+                card.style.border = '2px solid #22c55e';
+                l3Found++;
+                document.getElementById('l3-score').innerText = l3Found;
+                
+                if(l3Found >= 3) {
+                    const nextBtn = document.getElementById('btn-next-stage3');
+                    nextBtn.classList.remove('hidden');
+                    nextBtn.classList.add('animate-float');
+                    // reveal rest
+                    document.querySelectorAll('.gift-card').forEach(c => c.onclick = null);
+                }
+            } else {
+                card.style.background = '#fee2e2'; // red-100
+            }
+        }
+
+        let loveLevel = 0;
+        let l4DecayInterval;
+        let l4Active = false;
+
+        function initLevel4() {
+            loveLevel = 0;
+            l4Active = true;
+            updateMeter();
+            document.getElementById('btn-next-stage4').classList.add('hidden');
+            document.getElementById('mash-btn').style.display = 'flex';
+            
+            clearInterval(l4DecayInterval);
+            l4DecayInterval = setInterval(() => {
+                if(l4Active && loveLevel > 0) {
+                    loveLevel -= 1.5; // decay rate
+                    if(loveLevel < 0) loveLevel = 0;
+                    updateMeter();
+                }
+            }, 100);
+        }
+
+        function mashButton() {
+            if(!l4Active) return;
+            loveLevel += 8; // increase per click
+            if(loveLevel > 100) loveLevel = 100;
+            updateMeter();
+
+            if(loveLevel === 100) {
+                l4Active = false;
+                clearInterval(l4DecayInterval);
+                document.getElementById('mash-btn').style.display = 'none';
+                
+                const nextBtn = document.getElementById('btn-next-stage4');
+                nextBtn.classList.remove('hidden');
+                nextBtn.classList.add('animate-pulse');
+            }
+        }
+
+        function updateMeter() {
+            document.getElementById('meter-fill').style.width = loveLevel + '%';
+            document.getElementById('meter-percent').innerText = Math.floor(loveLevel) + '%';
+        }
+
+        function initFinale() {
+            createConfetti();
+        }
+
+        function createConfetti() {
+            const colors = ['#ff4757', '#ff6b81', '#ff7f50', '#ffffff', '#eccc68', '#ff9a9e'];
+            for (let i = 0; i < 150; i++) {
                 setTimeout(() => {
                     const confetti = document.createElement('div');
                     confetti.classList.add('confetti');
+                    
+                    // random styling
                     confetti.style.left = Math.random() * 100 + 'vw';
-                    confetti.style.backgroundColor = colors[Math.random() * colors.length | 0];
-                    confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.width = (Math.random() * 10 + 5) + 'px';
+                    confetti.style.height = confetti.style.width;
+                    
+                    // random animation
+                    const duration = Math.random() * 3 + 2;
+                    confetti.style.animationDuration = duration + 's';
+                    confetti.style.opacity = Math.random() + 0.5;
+                    
+                    // shapes (some circles, some squares)
+                    if(Math.random() > 0.5) confetti.style.borderRadius = '50%';
+                    
                     document.body.appendChild(confetti);
                     
-                    setTimeout(() => confetti.remove(), 5000);
-                }, i * 50); // stagger creation
+                    // cleanup
+                    setTimeout(() => confetti.remove(), duration * 1000);
+                }, i * 30); // stagger
             }
         }
     </script>
